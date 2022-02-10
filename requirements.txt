@@ -1,0 +1,6 @@
+numpy==1.22.2
+opencv-python==4.5.5.62
+Pillow==9.0.1
+SudachiDict-small==20211220
+SudachiPy==0.6.3
+wanakana-python==1.2.2

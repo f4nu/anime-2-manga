@@ -2,7 +2,7 @@ import cv2
 import re
 import json
 from PIL import Image, ImageFont, ImageDraw
-from kanji import print_tokens
+from kanji import get_tokens
 
 
 def parse_time(time_string):
@@ -62,12 +62,14 @@ else:
     print("Frame count:", frame_count)
 
     font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 48)
+    furigana_font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 18)
     stroke_width = 3
+    furigana_stroke_width = 2
     count = 0
     for subtitle in subtitles:
         msToAdd = (subtitle['end'] - subtitle['start']) / 2
         subtitleContent = subtitle['content']
-        print(print_tokens(subtitleContent))
+        tokens = get_tokens(subtitleContent)
 
         vidcap.set(cv2.CAP_PROP_POS_MSEC, subtitle['start'] + msToAdd)
         success, image = vidcap.read()
@@ -88,10 +90,31 @@ else:
                 stroke_width=stroke_width,
                 stroke_fill=(0, 0, 0),
             )
+
+            for token in tokens:
+                print(token)
+                hiragana_text = token['hiragana']
+                furigana_w, furigana_h = d.textsize(hiragana_text, furigana_font)
+                morpheme_w, morpheme_h = d.textsize(token['surface'], font)
+                start_x, start_y = d.textsize(subtitleContent[:token['begin']], font)
+                print(hiragana_text, subtitleContent[:token['begin']])
+                print('furigana_w/h', furigana_w, furigana_h)
+                print('morpheme_w/h', morpheme_w, morpheme_h)
+                print('start_x/y', start_x, start_y)
+                d.text(
+                    (x + start_x + (morpheme_w / 2) - (furigana_w / 2), y - 15),
+                    hiragana_text,
+                    font=furigana_font,
+                    fill=(255, 255, 255),
+                    stroke_width=furigana_stroke_width,
+                    stroke_fill=(0, 0, 0),
+                )
+
             img.save("output/19-%d.jpg" % count)
 
         count += 1
-        exit()
+        if count > 10:
+            exit()
 
 vidcap.release()
 cv2.destroyAllWindows()

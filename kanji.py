@@ -14,8 +14,20 @@ JAPANESE_PUNCTUATION = '　〜！？。、（）：「」『』０１２３４�
 def is_japanese_extended(text):
     return is_japanese(text) and text not in string.punctuation and text not in JAPANESE_PUNCTUATION
 
-def print_tokens(text):
+def get_tokens(text):
+    token_parts = []
     for token in tokenize_furigana(text):
         should_parse = is_japanese_extended(token.surface()) and not is_katakana(token.surface()) and not is_hiragana(token.surface())
         if should_parse:
-            print(token.surface(), token.reading_form(), to_hiragana(token.reading_form()))
+            token_parts.append(
+                {
+                    'token': token,
+                    'begin': token.begin(),
+                    'end': token.end(),
+                    'surface': token.surface(),
+                    'reading_form': token.reading_form(),
+                    'hiragana': to_hiragana(token.reading_form())
+                }
+            )
+
+    return token_parts
