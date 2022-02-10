@@ -1,6 +1,7 @@
 import cv2
 import re
 import json
+import os
 from PIL import Image, ImageFont, ImageDraw
 from kanji import get_tokens
 
@@ -125,9 +126,10 @@ else:
                 print('')
 
             img.save("output/19-%d.jpg" % count)
+            os.remove(fileName)
 
         count += 1
-        if count > 200:
+        if count > 2:
             exit()
 
 vidcap.release()
