@@ -65,6 +65,7 @@ else:
     furigana_font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 18)
     stroke_width = 3
     furigana_stroke_width = 2
+    spacing = 15
     count = 0
     for subtitle in subtitles:
         msToAdd = (subtitle['end'] - subtitle['start']) / 2
@@ -89,6 +90,7 @@ else:
                 fill=(255, 255, 255),
                 stroke_width=stroke_width,
                 stroke_fill=(0, 0, 0),
+                spacing=spacing,
             )
 
             for token in tokens:
@@ -96,24 +98,36 @@ else:
                 hiragana_text = token['hiragana']
                 furigana_w, furigana_h = d.textsize(hiragana_text, furigana_font)
                 morpheme_w, morpheme_h = d.textsize(token['surface'], font)
-                start_x, start_y = d.textsize(subtitleContent[:token['begin']], font)
-                print(hiragana_text, subtitleContent[:token['begin']])
+                string_until_morpheme = subtitleContent[:token['begin']]
+                number_of_newlines = string_until_morpheme.count("\n")
+                if number_of_newlines > 0:
+                    regex = r'^(.*?\n){' + str(number_of_newlines) + '}'
+                    regex_pattern = re.compile(regex) 
+                    string_until_morpheme = re.sub(regex_pattern, '', string_until_morpheme)
+                    print('text_after', string_until_morpheme);
+                    print('regex', regex)
+
+                start_x, start_y = d.textsize(string_until_morpheme, font)
+                print('newlines', number_of_newlines)
+                print('hiragana', hiragana_text)
+                print('string_until', string_until_morpheme)
                 print('furigana_w/h', furigana_w, furigana_h)
                 print('morpheme_w/h', morpheme_w, morpheme_h)
                 print('start_x/y', start_x, start_y)
                 d.text(
-                    (x + start_x + (morpheme_w / 2) - (furigana_w / 2), y - 15),
+                    (x + start_x + (morpheme_w / 2) - (furigana_w / 2), y - 15 + (morpheme_h * number_of_newlines) + ((spacing * 1.2) * number_of_newlines)),
                     hiragana_text,
                     font=furigana_font,
                     fill=(255, 255, 255),
                     stroke_width=furigana_stroke_width,
                     stroke_fill=(0, 0, 0),
                 )
+                print('')
 
             img.save("output/19-%d.jpg" % count)
 
         count += 1
-        if count > 10:
+        if count > 200:
             exit()
 
 vidcap.release()
