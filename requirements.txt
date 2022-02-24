@@ -1,6 +1,11 @@
+certifi==2021.10.8
+charset-normalizer==2.0.12
+idna==3.3
 numpy==1.22.2
 opencv-python==4.5.5.62
 Pillow==9.0.1
+requests==2.27.1
 SudachiDict-small==20211220
 SudachiPy==0.6.3
+urllib3==1.26.8
 wanakana-python==1.2.2

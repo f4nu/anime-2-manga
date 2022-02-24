@@ -4,6 +4,9 @@ import json
 import os
 from PIL import Image, ImageFont, ImageDraw
 from kanji import get_tokens
+from wanikani import Wanikani
+from wanikani_assignment import WanikaniAssignment
+from wanikani_word import WanikaniWord
 
 
 def parse_time(time_string):
@@ -41,12 +44,12 @@ def parse_srt(srt_string):
 
     return srt_list
 
-
+wk = Wanikani()
 srt = open('input/19.srt', 'r', encoding="utf-8").read()
 subtitles = parse_srt(srt)
 
 vidcap = cv2.VideoCapture('input/19.mkv')
-
+debugLog = False
 if (vidcap.isOpened() == False):
     print("Error opening the video file")
 else:
@@ -54,16 +57,16 @@ else:
     width = int(vidcap.get(3))
     height = int(vidcap.get(4))
     fps = float(vidcap.get(5))
-    print("Frame Rate:", fps, "frames per second")	
-    print(width, "x", height)
+    if debugLog: print("Frame Rate:", fps, "frames per second")	
+    if debugLog: print(width, "x", height)
 
     # Get frame count
     frame_count = int(vidcap.get(7))
 
-    print("Frame count:", frame_count)
+    if debugLog: print("Frame count:", frame_count)
 
-    font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 48)
-    furigana_font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 18)
+    font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 56)
+    furigana_font = ImageFont.truetype('fonts/NotoSansJP-Regular.otf', 26)
     stroke_width = 3
     furigana_stroke_width = 2
     spacing = 15
@@ -83,7 +86,7 @@ else:
             w, h = d.textsize(subtitleContent, font)
             x = (width / 2) - (w / 2)
             y = height - (h) - (height / 20)
-            print(subtitleContent, w, h, x, y)
+            if debugLog: print(subtitleContent, w, h, x, y)
             d.text(
                 (x, y),
                 subtitleContent,
@@ -95,7 +98,12 @@ else:
             )
 
             for token in tokens:
-                print(token)
+                found_wk_word = WanikaniWord.get_word(token['surface'])
+                found_wk_assignment = None
+                if found_wk_word is not None:
+                    found_wk_assignment = WanikaniAssignment.get_assignment(found_wk_word.id)
+
+                if debugLog: print("surface", token['surface'], found_wk_word)
                 hiragana_text = token['hiragana']
                 furigana_w, furigana_h = d.textsize(hiragana_text, furigana_font)
                 morpheme_w, morpheme_h = d.textsize(token['surface'], font)
@@ -105,25 +113,37 @@ else:
                     regex = r'^(.*?\n){' + str(number_of_newlines) + '}'
                     regex_pattern = re.compile(regex) 
                     string_until_morpheme = re.sub(regex_pattern, '', string_until_morpheme)
-                    print('text_after', string_until_morpheme);
-                    print('regex', regex)
+                    if debugLog: print('text_after', string_until_morpheme);
+                    if debugLog: print('regex', regex)
 
                 start_x, start_y = d.textsize(string_until_morpheme, font)
-                print('newlines', number_of_newlines)
-                print('hiragana', hiragana_text)
-                print('string_until', string_until_morpheme)
-                print('furigana_w/h', furigana_w, furigana_h)
-                print('morpheme_w/h', morpheme_w, morpheme_h)
-                print('start_x/y', start_x, start_y)
+                if debugLog: print('newlines', number_of_newlines)
+                if debugLog: print('hiragana', hiragana_text)
+                if debugLog: print('string_until', string_until_morpheme)
+                if debugLog: print('furigana_w/h', furigana_w, furigana_h)
+                if debugLog: print('morpheme_w/h', morpheme_w, morpheme_h)
+                if debugLog: print('start_x/y', start_x, start_y)
+
+                furigana_x = x + start_x + (morpheme_w / 2) - (furigana_w / 2)
+                furigana_y = y - morpheme_h / 3.2 + (morpheme_h * number_of_newlines) + ((spacing * 1.2) * number_of_newlines)
                 d.text(
-                    (x + start_x + (morpheme_w / 2) - (furigana_w / 2), y - 15 + (morpheme_h * number_of_newlines) + ((spacing * 1.2) * number_of_newlines)),
+                    (furigana_x, furigana_y),
                     hiragana_text,
                     font=furigana_font,
                     fill=(255, 255, 255),
                     stroke_width=furigana_stroke_width,
                     stroke_fill=(0, 0, 0),
                 )
-                print('')
+                if found_wk_word is not None:
+                    d.text(
+                        (furigana_x, furigana_y - 15),
+                        f'{found_wk_word.spaced_repetition_system_id}',
+                        font=furigana_font,
+                        fill=(255, 255, 255),
+                        stroke_width=furigana_stroke_width,
+                        stroke_fill=(0, 0, 0),
+                    )
+                if debugLog: print('')
 
             img.save("output/19-%d.jpg" % count)
             os.remove(fileName)
